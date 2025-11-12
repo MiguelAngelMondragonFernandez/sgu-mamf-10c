@@ -1,40 +1,58 @@
 pipeline {
     agent any
 
+    environment {
+        PATH="/usr/bin:${env.PATH}"
+    }
+
     stages {
-        stage('Checkout') {
+        //Primera etapa, para todos los servicios
+        stage('Parando los servicios'){
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/SGU-MAMF-10C.git'
+                sh ''' 
+                docker compose -p sgu-mamf-10c down || true
+                '''
             }
         }
-        stage('Build Backend') {
+        //Eliminar las imagenes antiguas
+        stage('Eliminando imagenes antiguas'){
             steps {
-                script {
-                    dir('backend') {
-                        sh './mvnw clean package'
-                    }
-                }
+                sh ''' 
+                IMAGES=$(docker images --filter "label=docker.compose.project=sgu-mamf-10c" -q)
+                if [ -n "$IMAGES" ]; then
+                    docker images rmi -f $IMAGES
+                else
+                    echo "No hay imagenes para eliminar"
+                fi
+                '''
             }
         }
-        stage('Build Frontend') {
+        //Bajar la actualizacion
+        stage('Actualizando...'){
             steps {
-                script {
-                    dir('client') {
-                        sh 'npm install'
-                        sh 'npm run build'
-                    }
-                }
+                checkout scm
             }
         }
-        stage('Docker Compose Build') {
+        //Levantar y desplegar el proyecto
+        stage('Construyendo y desplegando...'){
             steps {
-                sh 'docker-compose build'
-            }
+                sh ''' 
+                docker compose up --build -d
+                '''
         }
-        stage('Docker Compose Up') {
-            steps {
-                sh 'docker-compose up -d'
-            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Despliegue completado con exito!'
+        }
+        failure {
+            echo 'El despliegue ha fallado.'
+        }
+
+        always {
+            echo 'Proceso de despliegue finalizado.'
         }
     }
 }
