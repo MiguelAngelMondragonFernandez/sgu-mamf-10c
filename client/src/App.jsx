@@ -1,277 +1,149 @@
 
+import React, { useState, useEffect } from 'react';
+import * as fetching from './modules/userFunctions.js';
 
-  import { useState, useEffect } from 'react';
+export default function App() {
+const [users, setUsers] = useState([]);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+const [pageLoad, setPageLoad] = useState(false);
+const [modalData, setModalData] = useState(null);
+const [showModal, setShowModal] = useState(false);
+const [typePush, setTypePush] = useState('POST');
 
-  import { getAllUsers, createUser, updateUser, deleteUser } from './modules/Users';
 
-  import './App.css';
-function App() {
-  const [users, setUsers] = useState([]);
-  const [userForm, setUserForm] = useState({ id: '', name: '', email: '', phoneNumber: '' });
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  
-
-  function App() {
-
-    const [users, setUsers] = useState([]);
-
-    const [userForm, setUserForm] = useState({ id: '', name: '', email: '', phoneNumber: '' });
-
-    const [isEditing, setIsEditing] = useState(false);
-
-  
-
-    useEffect(() => {
-
-      fetchUsers();
-
-    }, []);
-
-  
-
-    const fetchUsers = async () => {
-
-      try {
-
-        const data = await getAllUsers();
-
+const armarTabla = async () => {
+    try {
+        const { data } = await fetching.getAllUsers();
         setUsers(data);
+    } catch (err) {
+        console.error('Error al armar la tabla:', err);
+    }
+}
 
-      } catch (error) {
+const openModal = (userId=null) => {
+    if(userId) {
+        const user = users.find(u => u.id === userId);
+        setTypePush('PUT');
+        setModalData(user);
+    } else {
+        setTypePush('POST');
+        setModalData({ id: null, name: '', email: '', phoneNumber: '' });
+    }
+    setShowModal(true);
+}
 
-        console.error("Could not fetch users:", error);
+const setFormData = async () => {
+    switch(typePush) {
+        case 'POST':
+            try {
+                await fetching.postUserData(modalData);
+                armarTabla();
+                setShowModal(false);
+            } catch (err) {
+                console.error('Error al crear usuario:', err);
+            }
+            break;
+        case 'PUT':
+            try {
+                await fetching.updateUserData(modalData);
+                armarTabla();
+                setShowModal(false);
+            } catch (err) {
+                console.error('Error al actualizar usuario:', err);
+            }
+            break;
+        default:
+            console.error('Tipo de operación no reconocido:', typePush);
+            break;
+    }
+}
 
-      }
+const deleteUser = async (userId) => {
+    try {
+        await fetching.deleteUserData(userId);
+        armarTabla();
+    } catch (err) {
+        console.error('Error al eliminar usuario:', err);
+    }
+}
 
-    };
 
-  
 
-    const handleInputChange = (e) => {
+useEffect(()=>{
+    if (!pageLoad) {
+        setPageLoad(true);
+    }
+},[])
 
-      const { name, value } = e.target;
-
-      setUserForm({ ...userForm, [name]: value });
-
-    };
-
-  
-
-    const handleSubmit = async (e) => {
-
-      e.preventDefault();
-
-      if (isEditing) {
-
-        await handleUpdateUser();
-
-      } else {
-
-        await handleCreateUser();
-
-      }
-
-      resetForm();
-
-    };
-
-  
-
-    const handleCreateUser = async () => {
-
-      try {
-
-        await createUser(userForm);
-
-        fetchUsers();
-
-      } catch (error) {
-
-        console.error("Could not create user:", error);
-
-      }
-
-    };
-
-  
-
-    const handleUpdateUser = async () => {
-
-      try {
-
-        await updateUser(userForm);
-
-        fetchUsers();
-
-      } catch (error) {
-
-        console.error("Could not update user:", error);
-
-      }
-
-    };
-
-  
-
-    const handleDeleteUser = async (id) => {
-
-      try {
-
-        await deleteUser(id);
-
-        fetchUsers();
-
-      } catch (error) {
-
-        console.error("Could not delete user:", error);
-
-      }
-
-    };
-
-  
-
-    const editUser = (user) => {
-
-      setIsEditing(true);
-
-      setUserForm(user);
-
-    };
-
-  
-
-    const resetForm = () => {
-
-      setIsEditing(false);
-
-      setUserForm({ id: '', name: '', email: '', phoneNumber: '' });
-
-    };
-
-  
+useEffect(() => {
+    if (pageLoad) {
+        armarTabla();
+    }
+}, [pageLoad]);
 
     return (
-
-      <div className="App">
-
-        <h1>User Management</h1>
-
-        <form onSubmit={handleSubmit} className="user-form">
-
-          <input
-
-            type="text"
-
-            name="name"
-
-            placeholder="Name"
-
-            value={userForm.name}
-
-            onChange={handleInputChange}
-
-            required
-
-          />
-
-          <input
-
-            type="email"
-
-            name="email"
-
-            placeholder="Email"
-
-            value={userForm.email}
-
-            onChange={handleInputChange}
-
-            required
-
-          />
-
-          <input
-
-            type="text"
-
-            name="phoneNumber"
-
-            placeholder="Phone Number"
-
-            value={userForm.phoneNumber}
-
-            onChange={handleInputChange}
-
-            required
-
-          />
-
-          <button type="submit">{isEditing ? 'Update' : 'Create'}</button>
-
-          {isEditing && <button type="button" onClick={resetForm}>Cancel</button>}
-
-        </form>
-
-  
-
-        <table className="users-table">
-
-          <thead>
-
-            <tr>
-
-              <th>Name</th>
-
-              <th>Email</th>
-
-              <th>Phone Number</th>
-
-              <th>Actions</th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {users.map((user) => (
-
-              <tr key={user.id}>
-
-                <td>{user.name}</td>
-
-                <td>{user.email}</td>
-
-                <td>{user.phoneNumber}</td>
-
-                <td>
-
-                  <button onClick={() => editUser(user)}>Edit</button>
-
-                  <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
+    <>
+        <h1>Usuarios</h1>
+        <button className="btn btn-primary" onClick={() => openModal()}>Agregar Usuario</button>
+        <table className="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {users.map(user => (
+                    <tr key={user.id}>
+                        <td>{user.id}</td>
+                        <td>{user.name}</td>
+                        <td>{user.email}</td>
+                        <td>{user.phoneNumber}</td>
+                        <td>
+                            <button className="btn btn-sm btn-warning" onClick={() => openModal(user.id)}>Editar</button>
+                            <button className="btn btn-sm btn-danger" onClick={() => deleteUser(user.id)}>Eliminar</button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
         </table>
 
-      </div>
-
+        {showModal && (
+            <div className="modal show d-block" tabIndex="-1">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">{modalData.id ? 'Editar Usuario' : 'Agregar Usuario'}</h5>
+                            <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                        </div>
+                        <div className="modal-body">
+                            <form>
+                                <div className="mb-3">
+                                    <label className="form-label">Nombre</label>
+                                    <input type="text" className="form-control" value={modalData.name} onChange={(e) => setModalData({ ...modalData, name: e.target.value })} />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label">Email</label>
+                                    <input type="email" className="form-control" value={modalData.email} onChange={(e) => setModalData({ ...modalData, email: e.target.value })} />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label">Teléfono</label>
+                                    <input type="text" className="form-control" value={modalData.phoneNumber} onChange={(e) => setModalData({ ...modalData, phoneNumber: e.target.value })} />
+                                </div>
+                            </form>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cerrar</button>
+                            <button type="button" className="btn btn-primary" onClick={() => setFormData(modalData)}>Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+    </>
     );
-
-  }
 }
-  
-
-  export default App;

@@ -22,13 +22,8 @@ public class UserService {
 
     public Map<String, Object> findAll(){
         Set<User> users = Set.copyOf(userRepository.findAll());
-        if (users.isEmpty()){
-            response.put("message", "No users found");
-            response.put("status", false);
-            return response;
-        }
-        response.put("message", "Users found");
-        response.put("status", true);
+        response.put("message", users.isEmpty() ?"Users found": "No users found");
+        response.put("status", !users.isEmpty());
         response.put("data", users);
         return response;
     }
@@ -68,12 +63,15 @@ public class UserService {
     }
 
     public Map<String, Object> delete(Long id){
+        System.out.println("El ID es: " + id);
         User user = userRepository.findById(id).orElse(null);
         if (Objects.isNull(user)){
+            System.out.println("Usuario no encontrado");
             response.put("message", "User not found");
             response.put("status", false);
             return response;
         }
+        System.out.println("Usuario encontrado: " + user.getName());
         userRepository.deleteById(id);
         response.put("message", "User deleted");
         response.put("status", true);

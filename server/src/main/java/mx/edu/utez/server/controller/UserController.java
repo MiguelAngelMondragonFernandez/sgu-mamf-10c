@@ -8,10 +8,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"*"})
+@CrossOrigin(origins = "*")
 public class UserController {
 
     private UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping("/")
     public Map<String, Object> getAllUsers() {
@@ -19,7 +23,7 @@ public class UserController {
     }
     
     @GetMapping("/{id}")
-    public Map<String, Object> getUserById(@RequestParam Long id) {
+    public Map<String, Object> getUserById(@PathVariable Long id) {
         return userService.findById(id);
     }
 
@@ -34,7 +38,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public Map<String, Object> deleteUser(@RequestParam Long id) {
+    public Map<String, Object> deleteUser(@PathVariable Long id) {
         return userService.delete(id);
     }
 }

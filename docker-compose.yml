@@ -19,15 +19,18 @@ services:
       context: ./client
       args:
         API_HOST: localhost
-        API_PORT: 8080
-        API_BASE: http://localhost:8080/api
+        API_PORT: 8089
+        API_BASE: /api
+        API_PROTOCOL: https://
     container_name: sgu-frontend
     ports:
     # PORT FORWARDING = MAPEO DE PUERTOS
     # PC: 3000 /TTTTTTTTTTTT\ CONTENEDOR:80
-      - "3000:80"
+      - "3000:443"
     networks:
       - sgu-net
+    volumes:
+      - certbot-conf:/etc/letsencrypt:ro
     depends_on:
       - backend
 
@@ -37,17 +40,22 @@ services:
       context: ./server
     container_name: sgu-backend
     environment:
-      SERVER_PORT: 8080
+      SERVER_PORT: 8089
       DB_HOST: database
       DB_PORT: 3306
       DB_NAME: userdb
       DB_USER: root
       DB_PASS: root
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_KEYSTORE: /etc/letsencrypt/live/localhost/keystore.p12
+      SERVER_SSL_KEYSTORE_PASSWORD: "changeit"
     # jdbc:mysql://database:3306
     ports:
-      - "8080:8080"
+      - "8089:8089"
     networks:
       - sgu-net
+    volumes:
+      - certbot-conf:/etc/letsencrypt:ro
     depends_on:
       - database
 
@@ -61,4 +69,6 @@ networks:
 # docker volume create sgu-volume
 volumes: 
   sgu-volume:
+    external: true
+  certbot-conf:
     external: true
